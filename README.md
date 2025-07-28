@@ -44,7 +44,7 @@ For example:
 
 ---
 
-## TelRevShell tries to fix that / 本工具正是为了解决这些问题而设计的
+## TelRevShell tries to fix that
 
 **TelRevShell** is a Go-based reverse shell listener/server that behaves like Telnet, offering a persistent, interactive terminal interface.
 

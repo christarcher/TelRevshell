@@ -1,0 +1,42 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Binaries
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        goos: [linux, windows, darwin]
+        goarch: [amd64, arm64]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Build binary
+      run: |
+        mkdir -p dist
+        GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o dist/telrevshell-${{ matrix.goos }}-${{ matrix.goarch }} main.go
+
+    - name: Upload Release Assets
+      uses: softprops/action-gh-release@v1
+      with:
+        name: TelRevShell ${{ github.ref_name }}
+        files: |
+          dist/telrevshell-*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
