@@ -1,17 +1,13 @@
 name: Build and Release
-
 on:
   push:
     tags: ['v*']
-
 permissions:
   contents: write
-
 jobs:
   build:
     name: Build Binaries
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         goos: [linux, windows, darwin]
@@ -20,22 +16,40 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
         go-version: '1.21'
-
     - name: Build binary
       run: |
         mkdir -p dist
-        GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o dist/telrevshell-${{ matrix.goos }}-${{ matrix.goarch }} main.go
+        # 添加这些编译参数确保静态编译
+        CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build \
+          -a -installsuffix cgo \
+          -ldflags '-extldflags "-static"' \
+          -o dist/telrevshell-${{ matrix.goos }}-${{ matrix.goarch }} main.go
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: dist/
 
-    - name: Upload Release Assets
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+    - name: Reorganize files
+      run: |
+        mkdir -p release
+        find . -name "telrevshell-*" -type f -exec cp {} release/ \;
+        ls -la release/
+    - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
         name: TelRevShell ${{ github.ref_name }}
-        files: |
-          dist/telrevshell-*
+        files: release/*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
