@@ -15,21 +15,20 @@ jobs:
         
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4  # 升级到v4
+      uses: actions/checkout@v4
     - name: Set up Go
-      uses: actions/setup-go@v5  # 升级到v5
+      uses: actions/setup-go@v5
       with:
         go-version: '1.21'
     - name: Build binary
       run: |
         mkdir -p dist
-        # 添加静态编译参数
         CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build \
           -a -installsuffix cgo \
           -ldflags '-extldflags "-static"' \
           -o dist/telrevshell-${{ matrix.goos }}-${{ matrix.goarch }} main.go
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4  # 升级到v4
+      uses: actions/upload-artifact@v4
       with:
         name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
         path: dist/
@@ -40,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Download all artifacts
-      uses: actions/download-artifact@v4  # 升级到v4
+      uses: actions/download-artifact@v4
       with:
         path: artifacts
     - name: Reorganize files
@@ -49,9 +48,12 @@ jobs:
         find artifacts -name "telrevshell-*" -type f -exec cp {} release/ \;
         ls -la release/
     - name: Create Release
-      uses: softprops/action-gh-release@v2  # 升级到v2
+      uses: softprops/action-gh-release@v2
       with:
         name: TelRevShell ${{ github.ref_name }}
+        draft: false          # 明确设置为非draft
+        prerelease: false     # 明确设置为非prerelease
+        generate_release_notes: true  # 自动生成release notes
         files: release/*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
